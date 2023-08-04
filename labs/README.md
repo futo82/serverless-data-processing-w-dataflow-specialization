@@ -187,7 +187,6 @@ source create_streaming_sinks.sh
 ```
 
 #### Run the pipeline 
-
 The pipeline will start and connect to the PubSub topic, awaiting input; there is none currently. 
 ```
 export PROJECT_ID=$(gcloud config get-value project) 
@@ -221,14 +220,14 @@ bash generate_streaming_events.sh
 bash generate_streaming_events.sh true 
 ```
 
-## Lab: Advanaced Streaming Analytics Pipeline with Cloud Dataflow
+## Lab: Advanced Streaming Analytics Pipeline with Cloud Dataflow
 
 This lab introduces Apache Beam concepts that allow pipeline creators to specify how their pipelines should deal with lag in a formal way.
-  - Deal with late data
-  - Deal with malformed data by:
-    - Writing a composite transform for more modular code
-    - Writing a transform that emits multiple outputs of different types
-    - Collecting malformed data and writing it to a location where it can be examined
+- Deal with late data
+- Deal with malformed data by:
+  - Writing a composite transform for more modular code
+  - Writing a transform that emits multiple outputs of different types
+  - Collecting malformed data and writing it to a location where it can be examined
 
 Source Code: advanced_streaming_minute_traffic_pipeline.py
 
@@ -261,8 +260,6 @@ source create_streaming_sinks.sh
 ```
 
 #### Run the pipeline 
-
-The pipeline will start and connect to the PubSub topic, awaiting input; there is none currently. 
 ```
 export PROJECT_ID=$(gcloud config get-value project) 
 export REGION=us-central1 
@@ -292,6 +289,104 @@ python3 streaming_minute_traffic_pipeline.py \
 #### Generate streaming input 
 ```
 bash generate_streaming_events.sh true 
+```
+
+## Lab: Using SQL Batch Analytics Pipelines
+
+In this lab, you: 
+- Write a pipeline that uses SQL to aggregate site traffic by user. 
+- Write a pipeline that uses SQL to aggregate site traffic by minute. 
+
+Part 1, rewrite your previous batch user traffic pipeline so that it performs the following: 
+- Reads the day’s traffic from a file in Cloud Storage. 
+- Converts each event into a CommonLog object. 
+- Uses SQL instead of Java transforms to sum the number of hits for each unique user ID and perform additional aggregations. 
+- Writes the resulting data to BigQuery. 
+
+Source Code: batch_user_traffic_SQL_pipeline.py
+
+#### Setting up virtual environment and dependencies 
+```
+sudo apt-get update && sudo apt-get install -y python3-venv 
+```
+
+#### Create and activate virtual environment 
+```
+python3 -m venv df-env 
+source df-env/bin/activate 
+```
+
+#### Install Packages 
+```
+python3 -m pip install -q --upgrade pip setuptools wheel 
+python3 -m pip install apache-beam[gcp] 
+```
+
+#### Enable the Dataflow & Datacatalog APIs
+```
+gcloud services enable dataflow.googleapis.com 
+gcloud services enable datacatalog.googleapis.com 
+```
+
+#### Set up the Data Environment 
+```
+cd .../scripts/
+source create_batch_sinks.sh 
+source generate_batch_events.sh 
+```
+
+#### Run the pipeline 
+```
+export PROJECT_ID=$(gcloud config get-value project) 
+export REGION=us-central1 
+export BUCKET=gs://${PROJECT_ID} 
+export PIPELINE_FOLDER=${BUCKET} 
+export RUNNER=DataflowRunner 
+export INPUT_PATH=${PIPELINE_FOLDER}/events.json 
+export TABLE_NAME=${PROJECT_ID}:logs.user_traffic 
+export AGGREGATE_TABLE_NAME=${PROJECT_ID}:logs.user_traffic 
+export RAW_TABLE_NAME=${PROJECT_ID}:logs.raw 
+
+python3 batch_user_traffic_SQL_pipeline.py \ 
+--project=${PROJECT_ID} \ 
+--region=${REGION} \ 
+--staging_location=${PIPELINE_FOLDER}/staging \ 
+--temp_location=${PIPELINE_FOLDER}/temp \ 
+--runner=${RUNNER} \ 
+--experiments=use_runner_v2 \ 
+--input_path=${INPUT_PATH} \ 
+--agg_table_name=${AGGREGATE_TABLE_NAME} \ 
+--raw_table_name=${RAW_TABLE_NAME} 
+```
+
+Part 2, Aggregating site traffic by minute with SQL 
+In this part of the lab, you rewrite your previous batch minute traffic  pipeline so that it performs the following: 
+- Reads the day’s traffic from a file in Cloud Storage. 
+- Converts each event into a CommonLog object and then adds a Joda Timestamp attribute to the object. 
+- Uses SQL instead of Java transforms to again Window sum the number of total hits per minute. 
+- Writes the resulting data to BigQuery.
+
+Source Code: batch_minute_traffic_SQL_pipeline.py
+
+#### Run the pipeline 
+```
+export PROJECT_ID=$(gcloud config get-value project) 
+export REGION=us-central1 
+export BUCKET=gs://${PROJECT_ID} 
+export PIPELINE_FOLDER=${BUCKET} 
+export RUNNER=DataflowRunner 
+export INPUT_PATH=${PIPELINE_FOLDER}/events.json 
+export TABLE_NAME=${PROJECT_ID}:logs.minute_traffic 
+
+python3 batch_minute_traffic_SQL_pipeline.py \ 
+--project=${PROJECT_ID} \ 
+--region=${REGION} \ 
+--stagingLocation=${PIPELINE_FOLDER}/staging \ 
+--tempLocation=${PIPELINE_FOLDER}/temp \ 
+--runner=${RUNNER} \ 
+--inputPath=${INPUT_PATH} \ 
+--tableName=${TABLE_NAME} \ 
+--experiments=use_runner_v2 
 ```
 
 ## Reference to Lab Content
