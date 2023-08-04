@@ -453,6 +453,68 @@ python3 streaming_minute_traffic_SQL_pipeline.py \
 bash generate_streaming_events.sh 
 ```
 
+## Lab: Testing with Apache Beam
+
+In this lab, we will explore how to perform unit tests locally with tools in the testing package of the Beam SDK, using the DirectRunner. 
+
+Part 1, Testing batch processing logic with TestPipeline
+
+Source Code: 
+- weather_statistics_pipeline.py
+- weather_statistics_pipeline_test.py
+
+#### Setting up virtual environment and dependencies 
+```
+sudo apt-get update && sudo apt-get install -y python3-venv 
+```
+
+#### Create and activate virtual environment 
+```
+python3 -m venv df-env 
+source df-env/bin/activate 
+```
+
+#### Install Packages 
+```
+python3 -m pip install -q --upgrade pip setuptools wheel 
+python3 -m pip install apache-beam[gcp] 
+```
+
+#### Enable the Dataflow & Datacatalog APIs
+```
+gcloud services enable dataflow.googleapis.com 
+```
+
+#### Set up Google Storage
+```
+export PROJECT_ID=$(gcloud config get-value project) 
+gsutil mb -l US gs://$PROJECT_ID 
+```
+
+#### Run unit tests
+```
+rm testing.out 
+python3 weather_statistics_pipeline_test.py  
+cat testing.out 
+  or 
+python3 -m unittest weather_statistics_pipeline_test.py 
+```
+
+Part 2, Testing stream processing logic with TestStream
+
+Source Code:
+-  taxi_streaming_pipeline.py
+-  taxi_streaming_pipeline_test.py
+
+#### Run unit tests
+```
+rm testing.out 
+python3 taxi_streaming_pipeline_testpy  
+cat testing.out 
+  or
+python3 -m unittest  taxi_streaming_pipeline_test.py 
+```
+
 ## Reference to Lab Content
 
 git clone https://github.com/GoogleCloudPlatform/training-data-analyst 
