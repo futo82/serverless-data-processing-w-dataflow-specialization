@@ -389,6 +389,70 @@ python3 batch_minute_traffic_SQL_pipeline.py \
 --experiments=use_runner_v2 
 ```
 
+## Lab: Using SQL for Streaming Analytics Pipelines
+
+In this lab, you rewrite your previous StreamingMinuteTraffic pipeline to perform the following: 
+- Reads the day’s traffic from a PubSub topic. 
+- Converts each event into a CommonLog object 
+- Uses SQL instead of Python transforms to again window the data per minute sum the total number of pageviews 
+- Writes the resulting data to BigQuery. 
+
+Source Code: streaming_minute_traffic_SQL_pipeline.py
+
+#### Setting up virtual environment and dependencies 
+```
+sudo apt-get update && sudo apt-get install -y python3-venv 
+```
+
+#### Create and activate virtual environment 
+```
+python3 -m venv df-env 
+source df-env/bin/activate 
+```
+
+#### Install Packages 
+```
+python3 -m pip install -q --upgrade pip setuptools wheel 
+python3 -m pip install apache-beam[gcp] 
+```
+
+#### Enable the Dataflow & Datacatalog APIs
+```
+gcloud services enable dataflow.googleapis.com 
+```
+
+#### Set up the Data Environment 
+```
+cd .../scripts/
+source create_streaming_sinks.sh 
+```
+
+#### Run the pipeline 
+```
+export PROJECT_ID=$(gcloud config get-value project) 
+export REGION=us-central1 
+export BUCKET=gs://${PROJECT_ID} 
+export PIPELINE_FOLDER=${BUCKET} 
+export RUNNER=DataflowRunner 
+export PUBSUB_TOPIC=projects/${PROJECT_ID}/topics/my_topic 
+export TABLE_NAME=${PROJECT_ID}:logs.minute_traffic 
+
+python3 streaming_minute_traffic_SQL_pipeline.py \ 
+--project=${PROJECT_ID} \ 
+--region=${REGION} \ 
+--staging_location=${PIPELINE_FOLDER}/staging \ 
+--temp_location=${PIPELINE_FOLDER}/temp \ 
+--runner=${RUNNER} \ 
+--input_topic=${PUBSUB_TOPIC} \ 
+--table_name=${TABLE_NAME} \ 
+--experiments=use_runner_v2 
+```
+
+#### Generate lag-less streaming input 
+```
+bash generate_streaming_events.sh 
+```
+
 ## Reference to Lab Content
 
 git clone https://github.com/GoogleCloudPlatform/training-data-analyst 
